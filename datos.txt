@@ -1,0 +1,26 @@
+PROYECTO FINAL MODELACIÓN Y SIMULACIÓN DE
+SISTEMAS I - 1/2025
+Realizar la simulación del Inventario de productos de un negocio, donde se debe considerar los
+siguientes aspectos:
+1.- Detalle de Productos y categorización
+2.- Inventario Inicial (Can�dad)
+3.- Entradas y salidas (Ventas y Compras)
+4.- Stock mínimo de cada producto
+5.- Can�dad de pedido de cada producto
+6.- Tiempo de Entrega del Material
+7.- Costo de Compra del Producto
+8.- Costo de Venta del Producto
+9.- Costo de Transporte del Producto
+Con todos estos factores a considerar, se debe lograr resolver entre las necesidades las siguientes
+preguntas:
+1.- Cuando se debe hacer pedido de un producto? Para contar con la can�dad
+necesaria
+2.- Que can�dad se debe solicitar del producto?
+3.- ¿Costo de entrega y transporte, para determinar que costo será el precio de Venta?
+* Considerar factores externos que puedan representar una amenaza o riesgo para la
+entrega del producto.
+4.- Que Producto es el más vendido?
+5.- Que Producto es el menos vendido?
+Para obtener los resultados mas óp�mos, se debe plantear diferentes escenarios y de acuerdo a
+cada uno realizar una decisión con respecto a que se puede mejorar para lograr el obje�vo
+planteado.
