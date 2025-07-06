@@ -290,6 +290,31 @@
             </div>
         </div>
     </div>
+    <div class="justify-center items-center flex flex-wrap gap-2 mt-4">
+        <button onclick="generarReporteVentas()"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-chart-bar"></i>
+            Reporte Ventas
+        </button>
+
+        <button onclick="generarReportePedidos()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-shopping-cart"></i>
+            Reporte Pedidos
+        </button>
+
+        <button onclick="generarReporteMovimientos()"
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-exchange-alt"></i>
+            Reporte Movimientos
+        </button>
+
+        <button onclick="generarReporteCompleto()"
+            class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-file-pdf"></i>
+            Reporte Completo
+        </button>
+    </div>
 
     <div class="max-w-7xl mx-auto p-4 sm:p-6 pt-24">
         <!-- Controles principales -->
@@ -476,6 +501,279 @@
                 document.getElementById('contenido').classList.remove('hidden');
             }, 1000);
         }, 6000);
+
+
+        // 2. Función para generar reporte de productos más y menos vendidos
+        function generarReporteVentas() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Configurar fuente y título
+            doc.setFontSize(20);
+            doc.text('Reporte de Ventas - Productos', 20, 20);
+
+            // Línea separadora
+            doc.setLineWidth(0.5);
+            doc.line(20, 25, 190, 25);
+
+            // Información general
+            doc.setFontSize(12);
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 35);
+            doc.text(`Día de simulación: ${diaActual}`, 20, 45);
+
+            // Encontrar producto más vendido
+            let masVendido = productos[0];
+            let menosVendido = productos[0];
+
+            productos.forEach(p => {
+                if (p.ventasTotales > masVendido.ventasTotales) masVendido = p;
+                if (p.ventasTotales < menosVendido.ventasTotales) menosVendido = p;
+            });
+
+            // Producto más vendido
+            doc.setFontSize(16);
+            doc.text('Producto Más Vendido:', 20, 60);
+            doc.setFontSize(12);
+            doc.text(`Nombre: ${masVendido.nombre}`, 25, 70);
+            doc.text(`Categoría: ${masVendido.categoria}`, 25, 80);
+            doc.text(`Cantidad vendida: ${masVendido.ventasTotales} unidades`, 25, 90);
+            doc.text(`Stock actual: ${masVendido.cantidad} unidades`, 25, 100);
+
+            // Producto menos vendido
+            doc.setFontSize(16);
+            doc.text('Producto Menos Vendido:', 20, 120);
+            doc.setFontSize(12);
+            doc.text(`Nombre: ${menosVendido.nombre}`, 25, 130);
+            doc.text(`Categoría: ${menosVendido.categoria}`, 25, 140);
+            doc.text(`Cantidad vendida: ${menosVendido.ventasTotales} unidades`, 25, 150);
+            doc.text(`Stock actual: ${menosVendido.cantidad} unidades`, 25, 160);
+
+            // Ranking de todos los productos
+            doc.setFontSize(16);
+            doc.text('Ranking Completo de Ventas:', 20, 180);
+
+            // Ordenar productos por ventas
+            const productosOrdenados = [...productos].sort((a, b) => b.ventasTotales - a.ventasTotales);
+
+            let yPosition = 190;
+            doc.setFontSize(10);
+            productosOrdenados.forEach((p, index) => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.text(`${index + 1}. ${p.nombre} - ${p.ventasTotales} vendidas`, 25, yPosition);
+                yPosition += 10;
+            });
+
+            // Guardar el PDF
+            doc.save(`reporte-ventas-dia-${diaActual}.pdf`);
+        }
+
+        // 3. Función para generar reporte de pedidos/solicitudes
+        function generarReportePedidos() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(20);
+            doc.text('Reporte de Pedidos y Solicitudes', 20, 20);
+
+            doc.setLineWidth(0.5);
+            doc.line(20, 25, 190, 25);
+
+            doc.setFontSize(12);
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 35);
+            doc.text(`Día de simulación: ${diaActual}`, 20, 45);
+
+            // Productos que necesitan pedido
+            const productosNecesitanPedido = productos.filter(p => p.cantidad < p.stockMin);
+
+            doc.setFontSize(16);
+            doc.text('Productos que Necesitan Pedido:', 20, 60);
+
+            let yPos = 70;
+            doc.setFontSize(10);
+
+            if (productosNecesitanPedido.length === 0) {
+                doc.text('No hay productos que necesiten pedido actualmente', 25, yPos);
+                yPos += 20;
+            } else {
+                productosNecesitanPedido.forEach(p => {
+                    const cantidadRecomendada = Math.ceil(p.stockMin + p.consumoEstimadoPorDia * p.tiempoEntrega - p.cantidad);
+                    doc.text(`${p.nombre} - Stock: ${p.cantidad} | Mín: ${p.stockMin} | Recomendado: ${cantidadRecomendada}`, 25, yPos);
+                    yPos += 10;
+                });
+            }
+
+            // Pedidos en tránsito
+            const pedidosEnTransito = productos.filter(p => p.entregaEnDias > 0);
+
+            doc.setFontSize(16);
+            doc.text('Pedidos en Tránsito:', 20, yPos + 10);
+            yPos += 20;
+
+            doc.setFontSize(10);
+            if (pedidosEnTransito.length === 0) {
+                doc.text('No hay pedidos en tránsito', 25, yPos);
+            } else {
+                pedidosEnTransito.forEach(p => {
+                    doc.text(`${p.nombre} - Cantidad: ${p.pedidoCantidad} | Llegada en: ${p.entregaEnDias} días`, 25, yPos);
+                    yPos += 10;
+                });
+            }
+
+            // Resumen de cantidades por categoría
+            yPos += 20;
+            doc.setFontSize(16);
+            doc.text('Cantidades Solicitadas por Categoría:', 20, yPos);
+            yPos += 10;
+
+            const resumenCategorias = {};
+            productosNecesitanPedido.forEach(p => {
+                if (!resumenCategorias[p.categoria]) {
+                    resumenCategorias[p.categoria] = { productos: 0, cantidadTotal: 0 };
+                }
+                resumenCategorias[p.categoria].productos++;
+                resumenCategorias[p.categoria].cantidadTotal += Math.ceil(p.stockMin + p.consumoEstimadoPorDia * p.tiempoEntrega - p.cantidad);
+            });
+
+            doc.setFontSize(10);
+            Object.entries(resumenCategorias).forEach(([categoria, data]) => {
+                doc.text(`${categoria}: ${data.productos} productos - ${data.cantidadTotal} unidades recomendadas`, 25, yPos);
+                yPos += 10;
+            });
+
+            doc.save(`reporte-pedidos-dia-${diaActual}.pdf`);
+        }
+
+        // 4. Función para generar reporte de entradas y salidas
+        function generarReporteMovimientos() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(20);
+            doc.text('Reporte de Entradas y Salidas', 20, 20);
+
+            doc.setLineWidth(0.5);
+            doc.line(20, 25, 190, 25);
+
+            doc.setFontSize(12);
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 35);
+            doc.text(`Día de simulación: ${diaActual}`, 20, 45);
+
+            // Resumen financiero
+            doc.setFontSize(16);
+            doc.text('Resumen Financiero:', 20, 60);
+
+            const capitalActual = capitalInicial + ingresos - gastos;
+
+            doc.setFontSize(12);
+            doc.text(`Capital Inicial: Bs ${capitalInicial.toFixed(2)}`, 25, 75);
+            doc.text(`Total Ingresos (Ventas): Bs ${ingresos.toFixed(2)}`, 25, 85);
+            doc.text(`Total Gastos (Compras): Bs ${gastos.toFixed(2)}`, 25, 95);
+            doc.text(`Capital Actual: Bs ${capitalActual.toFixed(2)}`, 25, 105);
+            doc.text(`Ganancia/Pérdida: Bs ${(capitalActual - capitalInicial).toFixed(2)}`, 25, 115);
+
+            // Detalle por producto
+            doc.setFontSize(16);
+            doc.text('Detalle por Producto:', 20, 135);
+
+            let yPosition = 150;
+            doc.setFontSize(10);
+
+            // Encabezados de tabla
+            doc.text('Producto', 25, yPosition);
+            doc.text('Vendidas', 80, yPosition);
+            doc.text('Stock Actual', 120, yPosition);
+            doc.text('Ingresos Est.', 160, yPosition);
+            yPosition += 10;
+
+            // Línea separadora
+            doc.line(25, yPosition - 5, 190, yPosition - 5);
+
+            productos.forEach(p => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+
+                const ingresosProducto = p.ventasTotales * ((p.costoCompra + p.costoTransporte) * 1.2);
+
+                doc.text(p.nombre, 25, yPosition);
+                doc.text(p.ventasTotales.toString(), 80, yPosition);
+                doc.text(p.cantidad.toString(), 120, yPosition);
+                doc.text(`Bs ${ingresosProducto.toFixed(2)}`, 160, yPosition);
+                yPosition += 10;
+            });
+
+            // Resumen por categoría
+            if (yPosition > 220) {
+                doc.addPage();
+                yPosition = 20;
+            }
+
+            yPosition += 10;
+            doc.setFontSize(16);
+            doc.text('Resumen por Categoría:', 20, yPosition);
+            yPosition += 15;
+
+            const resumenCat = {};
+            productos.forEach(p => {
+                if (!resumenCat[p.categoria]) {
+                    resumenCat[p.categoria] = { ventas: 0, ingresos: 0, stock: 0 };
+                }
+                resumenCat[p.categoria].ventas += p.ventasTotales;
+                resumenCat[p.categoria].ingresos += p.ventasTotales * ((p.costoCompra + p.costoTransporte) * 1.2);
+                resumenCat[p.categoria].stock += p.cantidad;
+            });
+
+            doc.setFontSize(10);
+            Object.entries(resumenCat).forEach(([categoria, data]) => {
+                doc.text(`${categoria}: ${data.ventas} vendidas | Bs ${data.ingresos.toFixed(2)} | Stock: ${data.stock}`, 25, yPosition);
+                yPosition += 10;
+            });
+
+            doc.save(`reporte-movimientos-dia-${diaActual}.pdf`);
+        }
+
+        // 5. Función para generar reporte completo
+        function generarReporteCompleto() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Página 1: Portada
+            doc.setFontSize(24);
+            doc.text('REPORTE COMPLETO', 20, 40);
+            doc.text('SIMULACIÓN DE INVENTARIO', 20, 60);
+
+            doc.setFontSize(16);
+            doc.text(`Día de Simulación: ${diaActual}`, 20, 100);
+            doc.text(`Fecha de Generación: ${new Date().toLocaleDateString()}`, 20, 120);
+            doc.text(`Hora: ${new Date().toLocaleTimeString()}`, 20, 140);
+
+            // Resumen ejecutivo
+            doc.setFontSize(14);
+            doc.text('RESUMEN EJECUTIVO:', 20, 180);
+
+            const masVendido = productos.reduce((max, p) => p.ventasTotales > max.ventasTotales ? p : max, productos[0]);
+            const menosVendido = productos.reduce((min, p) => p.ventasTotales < min.ventasTotales ? p : min, productos[0]);
+            const totalVentas = productos.reduce((sum, p) => sum + p.ventasTotales, 0);
+            const productosAgotados = productos.filter(p => p.cantidad === 0).length;
+
+            doc.setFontSize(12);
+            doc.text(`• Total de productos vendidos: ${totalVentas}`, 25, 200);
+            doc.text(`• Productos agotados: ${productosAgotados}`, 25, 210);
+            doc.text(`• Producto estrella: ${masVendido.nombre} (${masVendido.ventasTotales} ventas)`, 25, 220);
+            doc.text(`• Capital actual: Bs ${(capitalInicial + ingresos - gastos).toFixed(2)}`, 25, 230);
+
+            // Generar las otras páginas usando las funciones existentes
+            doc.addPage();
+
+            // Aquí podrías agregar contenido adicional o llamar a las otras funciones
+            // para crear un reporte más completo
+
+            doc.save(`reporte-completo-dia-${diaActual}.pdf`);
+        }
     </script>
     <script>
         let productos = [], diaActual = 0, intervalo = null, intervaloDuracion = 12000;
@@ -882,7 +1180,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.body.style.opacity = '1';
         });
+
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 
 </body>
